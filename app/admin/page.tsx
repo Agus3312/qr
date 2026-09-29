@@ -3,7 +3,8 @@ import { getAllClients, getQrScanSummary, getRecentAuditEvents } from "@/lib/dat
 import { headers } from "next/headers";
 import LogoutButton from "@/app/admin/logout-button";
 import ResetClientButton from "@/app/admin/reset-client-button";
-import { filterClients, formatAuditAction, type QrStatus } from "@/lib/qr-admin-domain";
+import { filterClients, formatAuditAction, whatsAppLinkToInput, type QrStatus } from "@/lib/qr-admin-domain";
+import { getQrBaseUrl } from "@/lib/site-url";
 
 type AdminPageProps = { searchParams: Promise<{ q?: string; status?: string }> };
 
@@ -17,7 +18,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const requestHeaders = await headers();
   const host = requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
-  const baseUrl = `${protocol}://${host}`;
+  const baseUrl = getQrBaseUrl(`${protocol}://${host}`);
   const query = resolvedSearchParams.q ?? "";
   const requestedStatus = resolvedSearchParams.status;
   const selectedStatus: QrStatus | "all" =
@@ -69,7 +70,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           <div className="card-actions">
             <span className="count-label">{visibleClients.length} de {clients.length} registrados</span>
             {availableCount > 0 && (
-              <a className="button button-secondary" href="/admin/qr-zip">Descargar disponibles (ZIP)</a>
+              <a className="button button-secondary" href="/admin/qr-sheet">Descargar imagen de QR disponibles</a>
             )}
           </div>
         </div>
@@ -122,7 +123,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                             <label>Negocio<input name="businessName" required /></label>
                             <label>Google<input name="google" type="url" placeholder="https://..." /></label>
                             <label>Instagram<input name="instagram" type="url" placeholder="https://..." /></label>
-                            <label>WhatsApp<input name="whatsapp" type="url" placeholder="https://..." /></label>
+                            <label>WhatsApp<input name="whatsapp" type="tel" inputMode="tel" autoComplete="tel" placeholder="+54 9 11 1234-5678" /></label>
                             <label>Facebook<input name="facebook" type="url" placeholder="https://..." /></label>
                             <label>Web<input name="web" type="url" placeholder="https://..." /></label>
                             <button type="submit">Guardar y activar</button>
@@ -135,9 +136,13 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                             <form className="activate-form" action={editClientAction}>
                               <input type="hidden" name="slug" value={client.slug} />
                               <label>Negocio<input name="businessName" defaultValue={client.businessName ?? ""} required /></label>
-                              {(["google", "instagram", "whatsapp", "facebook", "web"] as const).map((platform) => (
-                                <label key={platform}>{platform[0].toUpperCase() + platform.slice(1)}<input name={platform} type="url" defaultValue={client.links.find((link) => link.platform === platform)?.url ?? ""} placeholder="https://..." /></label>
-                              ))}
+                              {(["google", "instagram", "whatsapp", "facebook", "web"] as const).map((platform) => {
+                                const savedValue = client.links.find((link) => link.platform === platform)?.url ?? "";
+                                const isWhatsApp = platform === "whatsapp";
+                                return (
+                                  <label key={platform}>{platform[0].toUpperCase() + platform.slice(1)}<input name={platform} type={isWhatsApp ? "tel" : "url"} inputMode={isWhatsApp ? "tel" : undefined} autoComplete={isWhatsApp ? "tel" : undefined} defaultValue={isWhatsApp ? whatsAppLinkToInput(savedValue) : savedValue} placeholder={isWhatsApp ? "+54 9 11 1234-5678" : "https://..."} /></label>
+                                );
+                              })}
                               <button type="submit">Guardar cambios</button>
                             </form>
                           </details>

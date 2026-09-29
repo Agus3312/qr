@@ -98,6 +98,8 @@ La página `/r/[slug]` resuelve el destino según el estado:
 
 Se reemplaza el uso de servicios externos por generación propia en SVG para que el QR sea más limpio, más claro y más amigable para impresión.
 
+La descarga genera un único SVG vectorial con todos los QRs sin asignar. Los códigos se acomodan en filas de hasta 6, miden 28 mm cada uno, tienen exactamente 2 mm entre sí en la fila y muestran solo el slug debajo (por ejemplo, `qr-001`). La imagen aumenta su altura según la cantidad de códigos y se descarga como `qr-disponibles.svg`.
+
 ## Requisitos
 
 Necesitás:
@@ -117,10 +119,11 @@ NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
 SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
 ADMIN_EMAILS=tu-email@ejemplo.com
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+# URL pública para los QR que vayas a imprimir; en local dejala sin definir.
+# NEXT_PUBLIC_SITE_URL=https://tu-proyecto.vercel.app
 ```
 
-El valor de `ADMIN_EMAILS` debe incluir el mismo email que usarás para iniciar sesión en Supabase Auth.
+El valor de `ADMIN_EMAILS` debe incluir el mismo email que usarás para iniciar sesión en Supabase Auth. Configurá `NEXT_PUBLIC_SITE_URL` con el dominio HTTPS público en las variables de Vercel antes de descargar QR para imprimir. Si el origen es `localhost` o una IP privada, las descargas de QR se bloquean para evitar imprimir códigos que solo funcionen dentro de la red local.
 
 ## Instalación
 

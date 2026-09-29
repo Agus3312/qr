@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getAllClients } from "@/lib/data";
 import { createQrSvg } from "@/lib/qr-code";
+import { getQrTargetUrl, QrPublicOriginError } from "@/lib/site-url";
 
 export async function GET(request: NextRequest) {
   await requireAdmin();
@@ -11,9 +12,16 @@ export async function GET(request: NextRequest) {
   if (clients.length === 0) return new NextResponse("No hay QR disponibles", { status: 404 });
 
   const zip = new JSZip();
-  for (const client of clients) {
-    const qrUrl = new URL(`/r/${encodeURIComponent(client.slug)}`, request.url).toString();
-    zip.file(`${client.slug}.svg`, await createQrSvg(qrUrl));
+  try {
+    for (const client of clients) {
+      const qrUrl = getQrTargetUrl(client.slug, request.url);
+      zip.file(`${client.slug}.svg`, await createQrSvg(qrUrl));
+    }
+  } catch (error) {
+    if (error instanceof QrPublicOriginError) {
+      return new NextResponse(error.message, { status: 400 });
+    }
+    throw error;
   }
 
   const archive = await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });

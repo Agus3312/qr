@@ -24,6 +24,40 @@ export function normalizeLinkUrl(value: string): string {
   return url.toString();
 }
 
+export function normalizeWhatsAppLink(value: string): string {
+  const normalized = value.trim();
+  if (!normalized) throw new Error("El número de WhatsApp no puede estar vacío");
+
+  if (/^(https?:\/\/|wa\.me\/)/i.test(normalized)) {
+    return normalizeLinkUrl(normalized);
+  }
+
+  const phoneNumber = normalized.replace(/\D/g, "");
+  if (phoneNumber.length < 8 || phoneNumber.length > 15) {
+    throw new Error("Ingresá el número de WhatsApp con código de país, entre 8 y 15 dígitos");
+  }
+
+  return `https://wa.me/${phoneNumber}`;
+}
+
+export function whatsAppLinkToInput(value: string): string {
+  try {
+    const url = new URL(value);
+    if (url.hostname === "wa.me") {
+      const phoneNumber = url.pathname.replace(/^\/+|\/+$/g, "");
+      return phoneNumber ? `+${phoneNumber}` : value;
+    }
+    if (url.hostname === "api.whatsapp.com") {
+      const phoneNumber = url.searchParams.get("phone");
+      return phoneNumber ? `+${phoneNumber.replace(/\D/g, "")}` : value;
+    }
+  } catch {
+    return value;
+  }
+
+  return value;
+}
+
 export function filterClients<T extends SearchableClient>(
   clients: readonly T[],
   query: string,

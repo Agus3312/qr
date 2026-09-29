@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { assignClient, editClient, setStatus, generateBatch, resetClient, ClientLink } from "@/lib/data";
 import { requireAdmin } from "@/lib/admin-auth";
-import { normalizeLinkUrl } from "@/lib/qr-admin-domain";
+import { normalizeLinkUrl, normalizeWhatsAppLink } from "@/lib/qr-admin-domain";
 
 async function saveClientAction(formData: FormData, activate: boolean) {
   await requireAdmin();
@@ -28,7 +28,8 @@ async function saveClientAction(formData: FormData, activate: boolean) {
     const value = formData.get(platform.key);
     const url = typeof value === "string" ? value.trim() : "";
     if (url) {
-      links.push({ platform: platform.key, label: platform.label, url: normalizeLinkUrl(url), order: order++ });
+      const normalizedUrl = platform.key === "whatsapp" ? normalizeWhatsAppLink(url) : normalizeLinkUrl(url);
+      links.push({ platform: platform.key, label: platform.label, url: normalizedUrl, order: order++ });
     }
   }
 
